@@ -8,9 +8,6 @@ import edu.ucsb.cs.capstone.letmypeoplecode.smartrover.BeaconError;
 import edu.ucsb.cs.capstone.letmypeoplecode.smartrover.BeaconManager;
 import edu.ucsb.cs.capstone.letmypeoplecode.smartrover.Point3D;
 
-/**
- * Created by Chris on 2/16/14.
- */
 public class TrilaterationTest extends InstrumentationTestCase {
     //The most basic test
     //4 beacons with almost no noise
@@ -23,10 +20,10 @@ public class TrilaterationTest extends InstrumentationTestCase {
 
         //This format makes it easier to paste from Maple or MATLAB
         Point3D result = trilatRunHelper(
-                new double[]{1,0,1,0},
-                new double[]{0,0,1,1},
-                new double[]{2,2,2,2},
-                new double[]{2.111244657,2.282839022,2.031589033,2.209378646}
+                new double[]{1,0,1,0},      //x coordinates of beacons
+                new double[]{0,0,1,1},      //y "
+                new double[]{2,2,2,2},      //z "
+                new double[]{2.111244657,2.282839022,2.031589033,2.209378646}   //The distance reported by each beacon
         );
 
         for(int i=0;i<3;i++){
@@ -50,10 +47,12 @@ public class TrilaterationTest extends InstrumentationTestCase {
     }
 
     //TWENTY beacons
-    //It is complete bluetooth anarchy in this user's house right now
+    //It is complete bluetooth anarchy in this user's room right now
     public void testNoisyHuge() throws BeaconError{
         double[] expected = {.877, .665, 0};
 
+        //Beacons placed in completely random positions
+        //Distances are also noisy
         Point3D result = trilatRunHelper(
             new double[]{0.845112476215237e-2, 1.14297964348494, -0.207876680961557e-1, 1.88017308078449, .265183287704836, .864322683828219, .256005382644264, 1.97714139671262, .651834630972347, 1.00410012887403, -.921373024509359, 1.09040993536071, .311718423004093, -.244594990245632, .112657662671979, -.216595401219630, -.150359338389866, 1.27009473039531, .835695773451052, -.909215102539883},
             new double[]{8.69587181757857, -1.10866322429944, 1.52991841523379, 1.22884893203545, 1.78434144619135, 3.58975218254698, 2.54922988151990, 2.65007163026388, 3.88827352493541, 2.47467119756452, -.147113320754151, .964302705863695, -3.08576837401448, 1.69840919947517, .762757841486923, -1.06097573715729, -2.04371587045021, -4.54266706666593, .287550933194703, -.854493579499496},

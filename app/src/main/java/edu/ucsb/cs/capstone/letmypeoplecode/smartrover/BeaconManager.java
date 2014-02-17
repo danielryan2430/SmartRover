@@ -1,14 +1,17 @@
 package edu.ucsb.cs.capstone.letmypeoplecode.smartrover;
 
 
-//Container for all beacons
-//Can do trilateration to compute our approximate location with regards to the beacons
-
 import java.util.ArrayList;
 import java.util.HashMap;
-
 import Jama.Matrix;
 import Jama.QRDecomposition;
+
+/*
+Container for all beacons
+Can do trilateration to compute our approximate location with regards to the beacons
+You update the RSSI information on the beacons using this class.
+They can't update themselves because the scanning for all beacons is handled in one place
+*/
 
 public class BeaconManager {
     private HashMap<String,Beacon> beaconTable;     //Hash table to store beacons. Key is probably the UUID

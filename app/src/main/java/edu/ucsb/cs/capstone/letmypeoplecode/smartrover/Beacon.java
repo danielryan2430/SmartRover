@@ -1,8 +1,6 @@
 package edu.ucsb.cs.capstone.letmypeoplecode.smartrover;
 
 
-import android.graphics.Point;
-
 /**
  *  A generic container for a beacon
  *  Contains the following:
