@@ -1,6 +1,8 @@
 package edu.ucsb.cs.capstone.letmypeoplecode.smartrover;
 
 
+import android.util.Log;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import Jama.Matrix;
@@ -27,10 +29,13 @@ public class BeaconManager {
     }
 
     //TODO
-    public void updateRSSI(String whichBeacon,int rssi){
+    public void updateDistance(String whichBeacon,double distance){
         //This is how each beacon gets updated
         //And the updating will be going on in another thread
         //We might have to switch to a thread-safe hash table implementation
+        Beacon UpdateBT= beaconTable.get(whichBeacon);
+        UpdateBT.setDistance(distance);
+        Log.i("updating distance",Double.toString(distance));
     }
 
     public Point3D doTrilateration() throws BeaconError{
