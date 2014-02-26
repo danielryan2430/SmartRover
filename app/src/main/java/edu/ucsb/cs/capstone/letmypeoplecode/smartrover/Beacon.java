@@ -35,7 +35,12 @@ public class Beacon {
         this.distance = d;
     }
 
-    public double getDistance() {
+    //used for hashmap to update distances
+    public void setDistance(double d){
+        this.distance = d;
+    }
+
+    public double getDistance(){
         //Get the RSSI for this beacon and compute the approximate distance
         if (test)
             return distance;
