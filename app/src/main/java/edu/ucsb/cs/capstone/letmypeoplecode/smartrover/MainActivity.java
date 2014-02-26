@@ -1,5 +1,10 @@
 package edu.ucsb.cs.capstone.letmypeoplecode.smartrover;
 
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBar;
 import android.support.v4.app.Fragment;
@@ -10,8 +15,12 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.os.Build;
+import android.widget.ImageView;
+
+import java.io.File;
 
 public class MainActivity extends ActionBarActivity {
+//    private MapView imgView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,7 +31,20 @@ public class MainActivity extends ActionBarActivity {
             getSupportFragmentManager().beginTransaction()
                     .add(R.id.container, new PlaceholderFragment())
                     .commit();
+
         }
+        try{
+//        int drawableID = getResources().getIdentifier("ic_launcher", "drawable", getPackageName());
+//        Resources rsrc= getResources();
+//        Bitmap bm = BitmapFactory.decodeResource(rsrc, drawableID, new BitmapFactory.Options());
+//        imgView = (MapView) findViewById(R.id.mapImage);
+//        imgView.setImageBitmap(bm);
+;
+        }
+        catch (Exception e){
+
+        }
+
     }
 
 
@@ -45,6 +67,7 @@ public class MainActivity extends ActionBarActivity {
         }
         return super.onOptionsItemSelected(item);
     }
+
 
     /**
      * A placeholder fragment containing a simple view.

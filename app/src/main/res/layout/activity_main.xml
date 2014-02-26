@@ -4,4 +4,50 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="edu.ucsb.cs.capstone.letmypeoplecode.smartrover.MainActivity"
-    tools:ignore="MergeRootFrame" />
+    tools:ignore="MergeRootFrame" >
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_gravity="left|top">
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <Button
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:text="Map"
+                android:layout_weight="1"
+                android:id="@+id/button" />
+
+            <Button
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:layout_weight="1"
+
+                android:text="info"
+                android:id="@+id/button2" />
+
+            <Button
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:layout_weight="1"
+
+                android:text="options"
+                android:id="@+id/button3" />
+
+        </LinearLayout>
+        <edu.ucsb.cs.capstone.letmypeoplecode.smartrover.MapView
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:id="@+id/mapImage"
+            android:src="@drawable/ic_launcher"
+            />
+
+
+    </LinearLayout>
+</FrameLayout>
