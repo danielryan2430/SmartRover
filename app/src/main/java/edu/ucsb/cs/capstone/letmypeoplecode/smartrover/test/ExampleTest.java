@@ -15,9 +15,9 @@ want to see the test output
 
 
 public class ExampleTest extends InstrumentationTestCase {
-    public void test() throws Exception{
-        final int expected=5;
-        final int reality=5;
-        assertEquals("OH SHIT NOT 5",expected,reality);
+    public void test() throws Exception {
+        final int expected = 5;
+        final int reality = 5;
+        assertEquals("OH SHIT NOT 5", expected, reality);
     }
 }
