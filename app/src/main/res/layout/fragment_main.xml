@@ -9,6 +9,9 @@
     tools:context="edu.ucsb.cs.capstone.letmypeoplecode.smartrover.MainActivity$PlaceholderFragment">
 
     <TextView
+
+        android:id="@+id/Infolog"
+        android:text="@string/hello_world"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 
