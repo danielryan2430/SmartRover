@@ -25,4 +25,8 @@ public class Point3D {
     public double z() {
         return get(2);
     }
+
+    public String toString(){
+        return vec[0]+" "+vec[1]+" "+vec[2];
+    }
 }
