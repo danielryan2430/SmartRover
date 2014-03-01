@@ -6,8 +6,21 @@ import android.bluetooth.BluetoothDevice;
 import android.util.Log;
 import android.widget.TextView;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.URL;
+import java.net.URLConnection;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -24,7 +37,9 @@ They can't update themselves because the scanning for all beacons is handled in 
 */
 
 public class BeaconManager {
-    private ConcurrentHashMap<String, Beacon> beaconTable;     //Hash table to store beacons. Key is probably the UUID
+    private final ConcurrentHashMap<String, Beacon> beaconTable;     //Hash table to store beacons. Key is probably the UUID
+    private final ConcurrentHashMap<String, String> gimbalResolves;      //Cache of Gimbal IDs resolved to their unique ID, so we don't have to spam
+//    private final ConcurrentHashMap<String,Boolean> inProgressResolving;    //Gimbal IDs that we have requested for resolving
 
     //The path loss exponent. Higher values = more loss with distance
     //Should be relatively constant for a given area
@@ -32,35 +47,53 @@ public class BeaconManager {
     private BluetoothAdapter BTadapter;
     private Thread btScanThread;
 
+    //First 4 bytes of each advertising packet
+    //They're all unique, should be enough to identify them
+//    0x02011a1a
+//    0x1107ad77
+
+    private static byte[] estimoteStartId = {0x02,0x01,0x1a,0x1a};
+    private static byte[] gimbalStartId = {0x11,0x07,(byte)0xad,0x77};
+
     private BluetoothAdapter.LeScanCallback leScanCallback =
             new BluetoothAdapter.LeScanCallback() {
                 @Override
 
                 public void onLeScan(final BluetoothDevice device, final int rssi,
                                      byte[] scanRecord) {
-                    ByteBuffer M = ByteBuffer.allocate(2);
-                    M.order(ByteOrder.BIG_ENDIAN);
-                    M.put(scanRecord[25]);
-                    M.put(scanRecord[26]);
-                    final short major=M.getShort(0);
 
-                    ByteBuffer m = ByteBuffer.allocate(2);
-                    m.order(ByteOrder.BIG_ENDIAN);
-                    m.put(scanRecord[27]);
-                    m.put(scanRecord[28]);
-                    final short minor=m.getShort(0);
-//                    final double distance=(Math.exp(((rssi+(9.10396133590131))/-12.864335093782)));
-                    String uniqueID=("M: "+Short.toString(major)+", m: "+Short.toString(minor));
+                    String scanRec = "";
+                    for(byte i : scanRecord){
+                        String digit = Integer.toHexString((i+256)%256);
+                        if(digit.length()==1)
+                            digit = "0" + digit;
+                        scanRec += digit + ":";
+                    }
+                    String uniqueID = "";
                     try{
-                        updateRSSI(uniqueID,rssi);
+                        if(isGimbal(scanRecord)){
+                            uniqueID = resolveGimbal(scanRecord);
+                            Log.i("bt_scan_results","Gimbal " + uniqueID + " " + rssi);
+                        }else{
+                            //Assume estimote or something else supported
+                            uniqueID = resolve_iBeacon(scanRecord);
+                            Log.i("bt_scan_results","iBeacon " + uniqueID + " " + rssi);
+                        }
+//                        updateRSSI(uniqueID,rssi);
                     }catch(BeaconError e){
-                        Log.w("bt_scan_results","Invalid beacon ID found:" + uniqueID);
+                        Log.w("bt_scan_results","Beacon update error",e);
                     }
                 }
             };
 
+    //Convert the minor/major values into a unique string used for lookup stuff
+    public static String iBeaconKeyString(short major,short minor){
+        return "M: " + major + ", m: " + minor;
+    }
+
     public BeaconManager() {
         beaconTable = new ConcurrentHashMap<String, Beacon>();
+        gimbalResolves = new ConcurrentHashMap<String, String>();
         btScanThread = new Thread(new Runnable(){
             public void run(){
                 Log.d("bt_scan_results","im in a thread");
@@ -182,6 +215,27 @@ public class BeaconManager {
 
     /* *** THE PRIVATE SECTION *** */
 
+    //Is this advertising packet from an Estimote?
+    private Boolean isEstimote(byte[] scanRecord){
+        if(scanRecord.length < 29)
+            return false;
+        return checkSRagainst(scanRecord,estimoteStartId);
+    }
+
+    //From a Gimbal?
+    private Boolean isGimbal(byte[] scanRecord){
+        if(scanRecord.length < 31)
+            return false;
+        return checkSRagainst(scanRecord,gimbalStartId);
+    }
+
+    private Boolean checkSRagainst(byte[] scanRecord,byte[] checkAgainst){
+        for(int i=0;i<4;i++)
+            if(checkAgainst[i] != scanRecord[i])
+                return false;
+        return true;
+    }
+
     private void updateRSSI(String whichBeacon, int rssi) throws BeaconError{
         //This is how each beacon gets updated
         //And the updating will be going on in another thread
@@ -193,5 +247,131 @@ public class BeaconManager {
 //        Log.i("bt_scan_results",whichBeacon + ", rssi: " + rssi);
     }
 
+
+
+    //The Gimbal beacon is hidden in the rest of the advertising packet
+    //Extract it and resolve it with their server
+    private String resolveGimbal(byte[] ScanRecord) throws BeaconError{
+        if(ScanRecord.length < 31)
+            throw new BeaconError("Invalid advertising packet for Gimbal");
+        ByteBuffer pktBytes = ByteBuffer.allocate(31);
+        for(int i=0;i<31;i++){
+            pktBytes.put(ScanRecord[i]);
+        }
+//        if(pktBytes.getInt() != gimbalStartId)
+//            throw new BeaconError("Wrong header for Gimbal");
+        pktBytes.position(20);
+        String id = "";
+        byte thisByte;
+        for(int i=0;i<11;i++){
+            thisByte = pktBytes.get();
+            if((thisByte & 0xF0) == 0)
+                id += "0";
+            id += Integer.toHexString((thisByte+256)%256);
+        }
+        if(id.length()!=22)
+            throw new BeaconError("Bad gimbal ID");
+        final String idToResolve = id.toUpperCase();
+
+        if(gimbalResolves.containsKey(idToResolve)){
+            String resd = gimbalResolves.get(idToResolve);
+            if(resd=="RESOLVING")
+                throw new BeaconError("Not done resolving yet");
+            return resd;
+        }
+
+        //Gimbal ID is not in our database, query the server
+        gimbalResolves.put(idToResolve,"RESOLVING");
+
+        final String url = "http://ip.jsontest.com/";
+        Log.i("bt_scan_results","Resolving Gimbal ID 0x" + idToResolve);
+        final String requestURL = "https://api.getfyx.com/api/mbr/v1/transmitters/resolve/" + idToResolve +  "/lookahead/24?service_id=960C4A8A244C11E2B29900A0C60077AD&access_token=a05689bd69fe08e059eef111a38e1cf4a7817e99bf8db6f0b62397c335b43c7d";
+//        JSONObject gimbalResponse;
+//        String thisGimbal;
+        Thread resolveThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try{
+//                    URL tits = new URL("http://173.194.41.228/");
+//                    URLConnection urlConnection = tits.openConnection();
+//                    InputStream in = new BufferedInputStream(urlConnection.getInputStream());
+//                    char yo = (char)in.read();
+//                    JSONObject ass = readJsonFromUrl("http://173.194.41.228/");
+//                    JSONObject fuck = readJsonFromUrl(url);
+                    JSONObject gimbalResponse = readJsonFromUrl(requestURL);
+                    String thisGimbal = gimbalResponse.getString("identifier").toUpperCase();
+                    gimbalResolves.put(idToResolve,thisGimbal);
+                    JSONArray moreResolves = gimbalResponse.getJSONArray("lookup_keys");
+                    for(int i=0;i<moreResolves.length();i++){
+                        String anotherResolve = moreResolves.getString(i);
+                        gimbalResolves.put(anotherResolve,thisGimbal);
+                    }
+                }catch(Throwable e){
+                    Log.e("bt_scan_results","Resolve failed",e);
+                }
+            }
+        });
+        resolveThread.start();
+        throw new BeaconError("Resolve in progress...");
+    }
+
+    private String resolve_iBeacon(byte[] scanRecord){
+        ByteBuffer M = ByteBuffer.allocate(2);
+        M.order(ByteOrder.BIG_ENDIAN);
+        M.put(scanRecord[25]);
+        M.put(scanRecord[26]);
+        final short major=M.getShort(0);
+
+        ByteBuffer m = ByteBuffer.allocate(2);
+        m.order(ByteOrder.BIG_ENDIAN);
+        m.put(scanRecord[27]);
+        m.put(scanRecord[28]);
+        final short minor=m.getShort(0);
+//                    final double distance=(Math.exp(((rssi+(9.10396133590131))/-12.864335093782)));
+        return "M: "+Short.toString(major)+", m: "+Short.toString(minor);
+    }
+
+    //Shamelessly stolen from StackOverflow
+    private static String readAll(Reader rd) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        int cp;
+        while ((cp = rd.read()) != -1) {
+            sb.append((char) cp);
+        }
+        return sb.toString();
+    }
+
+    public static JSONObject readJsonFromUrl(String url) throws IOException, JSONException {
+        InputStream is = new URL(url).openStream();
+        try {
+            BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+            String jsonText = readAll(rd);
+            JSONObject json = new JSONObject(jsonText);
+            return json;
+        } finally {
+            is.close();
+        }
+    }
+
+    private void connectionTest(){
+        Thread testCon = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try{
+                    URL tits = new URL("ftp://mirror.csclub.uwaterloo.ca/index.html");
+                    URLConnection urlConnection = tits.openConnection();
+                    InputStream in = new BufferedInputStream(urlConnection.getInputStream());
+                    char yo = (char)in.read();
+                    char hi = (char)in.read();
+                }catch(Throwable e){
+                    Log.e("shit","shit");
+                }
+            }
+        });
+        testCon.start();
+    }
+
 }
+
+
 

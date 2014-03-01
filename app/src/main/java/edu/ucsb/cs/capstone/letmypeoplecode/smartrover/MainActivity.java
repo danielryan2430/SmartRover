@@ -18,6 +18,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import java.io.BufferedInputStream;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
+
 //TODO : STOP DUMPING STUFF IN MAIN!
 
 public class MainActivity extends ActionBarActivity {
@@ -36,6 +41,7 @@ public class MainActivity extends ActionBarActivity {
                     .commit();
         }
 
+
         if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
             Toast.makeText(this, "ble_not_supported", Toast.LENGTH_SHORT).show();
             finish();
@@ -50,25 +56,22 @@ public class MainActivity extends ActionBarActivity {
             startActivityForResult(enableBtIntent, 1);
         }
 
-       this.sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        this.sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         if(bManager != null)
             return;
-       bManager = new BeaconManager();
+        bManager = new BeaconManager();
         bManager.setBTadapter(mBluetoothAdapter);
         try{
-            bManager.addBeacon("M: 5719, m: 14674", new Beacon(4.25, 0, 0));
-            bManager.addBeacon("M: 9177, m: 7843", new Beacon(0, 0, 0));
-            bManager.addBeacon("M: 10374, m: 17963", new Beacon(1.70833333333, 0, 0));
-            bManager.addBeacon("M: 5054, m: 14674", new Beacon(3, 0, 0));
+//            bManager.addBeacon("M: 5719, m: 14674", new Beacon(4.25, 0, 0));
+//            bManager.addBeacon("M: 9177, m: 7843", new Beacon(0, 0, 0));
+//            bManager.addBeacon("M: 10374, m: 17963", new Beacon(1.70833333333, 0, 0));
+//            bManager.addBeacon("M: 5054, m: 14674", new Beacon(3, 0, 0));
             bManager.startBTupdating();
         }catch(BeaconError e){
             Log.e("bt","Bluetooth scanning fucked up",e);
         }
-        bManager.logEnable();
+//        bManager.logEnable();
     }
-
-
-
 
 
     public SharedPreferences getSharedPref() {
