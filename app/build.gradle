@@ -2,7 +2,7 @@ apply plugin: 'android'
 
 android {
     compileSdkVersion 19
-    buildToolsVersion "19.0.1"
+    buildToolsVersion '19.0.1'
 
     defaultConfig {
         minSdkVersion 18
@@ -16,10 +16,16 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
         }
     }
+    packagingOptions {
+        exclude 'bin/AndroidManifest.xml'
+    }
 }
 
 dependencies {
     compile 'com.android.support:appcompat-v7:+'
     compile fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
     compile files('libs/Jama-1.0.3.jar')
+    compile files('build/libs/ioiolibandroid.jar')
+    compile files('build/libs/ioiolibaccessory.jar')
+    compile files('build/libs/ioiolibbt.jar')
 }
