@@ -204,18 +204,15 @@ public class BeaconManager {
                     try{
 						final Point3D result = doTrilateration();
                         Log.i("bt_trilat","Trilateration: " + result);
-						outsideActivity.runOnUiThread(new Runnable() {
-							@Override
-							public void run() {
-								TextView tresults = (TextView) outsideActivity.findViewById(R.id.trilatResultView);
-								tresults.setText(result.toString());
-								if(listviewAdapter!=null)
-									listviewAdapter.notifyDataSetChanged();
-//								TextView scanRate = (TextView) outsideActivity.findViewById(R.id.scanSpeedView);
-//								scanRate.setText(scanCount);
-//								scanCount=0;
-							}
-						});
+//						outsideActivity.runOnUiThread(new Runnable() {
+//							@Override
+//							public void run() {
+//								TextView tresults = (TextView) outsideActivity.findViewById(R.id.trilatResultView);
+//								tresults.setText(result.toString());
+//								if(listviewAdapter!=null)
+//									listviewAdapter.notifyDataSetChanged();
+//							}
+//						});
 						en = beaconTable.elements();
 						while(en.hasMoreElements()){
 							Beacon b = en.nextElement();
