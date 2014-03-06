@@ -50,12 +50,6 @@ public class Beacon {
         otherConstruct();
     }
 
-    //For testing purposes only
-//    public Beacon(double x, double y, double z, double hardCodeDist) {
-//        myLocation = new Point3D(x, y, z);
-//        setDistance_test(hardCodeDist);
-//    }
-
     //FOR TESTING ONLY
     public void setDistance_test(double d) {
         this.test = true;

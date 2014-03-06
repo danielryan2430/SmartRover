@@ -1,44 +1,124 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/container"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context="edu.ucsb.cs.capstone.letmypeoplecode.smartrover.MainActivity"
-    tools:ignore="MergeRootFrame" >
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent">
 
-    <HorizontalScrollView
+    <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/horizontalScrollView"
-        android:layout_gravity="right|bottom" />
+        android:paddingRight="5px"
+        android:text="@string/analog_label" />
 
-    <ListView
+    <TextView
+        android:id="@+id/TextView"
         android:layout_width="wrap_content"
-        android:layout_height="452dp"
-        android:id="@+id/beaconListView"
-        android:layout_gravity="center_horizontal|bottom" />
+        android:layout_height="wrap_content"
+        android:text="0.00"
+        android:textSize="72sp" />
 
-    <LinearLayout
-        android:orientation="vertical"
-        android:layout_width="fill_parent"
-        android:layout_height="68dp"
-        android:layout_gravity="center_horizontal|top">
+    <ToggleButton
+        android:id="@+id/ToggleButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_margin="20px"
+        android:textOff="Led is OFF"
+        android:textOn="Led is ON"
+        />
 
-        <TextView
-            android:layout_width="match_parent"
+    <GridLayout
+        android:id="@+id/gridButtons"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#222222"
+        android:rowCount="4"
+        android:columnCount="2">
+
+        <Button
+            android:id="@+id/btnDriveLeftFwd"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Trilat results"
-            android:id="@+id/trilatResultView"
-            android:layout_gravity="center_horizontal|top"
-            android:textSize="17sp" />
+            android:layout_gravity="center_horizontal"
+            android:layout_margin="20dp"
+            android:layout_row="0"
+            android:layout_column="0"
+            android:text="Left Motor FWD" />
 
-        <TextView
-            android:layout_width="match_parent"
+        <Button
+            android:id="@+id/btnDriveRightFwd"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Scan speed"
-            android:id="@+id/scanSpeedView"
-            android:textSize="17sp"/>
-    </LinearLayout>
+            android:layout_gravity="center_horizontal"
+            android:layout_margin="20dp"
+            android:layout_row="0"
+            android:layout_column="1"
+            android:text="Right Motor FWD" />
 
-</FrameLayout>
+        <Button
+            android:id="@+id/btnDriveLeftRev"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_margin="20dp"
+            android:layout_row="1"
+            android:layout_column="0"
+            android:text="Left Motor REV" />
 
+        <Button
+            android:id="@+id/btnDriveRightRev"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_margin="20dp"
+            android:layout_row="1"
+            android:layout_column="1"
+            android:text="Right Motor REV" />
+
+
+        <Button
+            android:id="@+id/btnForkliftUp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_margin="20dp"
+            android:layout_row="2"
+            android:layout_column="0"
+            android:text="Forklift Up" />
+
+        <Button
+            android:id="@+id/btnForkliftDown"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_margin="20dp"
+            android:layout_row="2"
+            android:layout_column="1"
+            android:text="Forklift Down" />
+
+        <Button
+            android:id="@+id/btnCameraPanLeft"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_margin="20dp"
+            android:layout_row="3"
+            android:layout_column="0"
+            android:text="Camera Pan Left" />
+
+        <Button
+            android:id="@+id/btnCameraPanRight"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_margin="20dp"
+            android:layout_row="3"
+            android:layout_column="1"
+            android:text="Camera Pan Right" />
+
+
+    </GridLayout>
+
+
+
+</LinearLayout>
