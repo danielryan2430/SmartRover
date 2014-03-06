@@ -68,59 +68,36 @@ public class HttpServerTranslator {
 
         if (message.equals("yes")) {
             JSONArray actions = json.getJSONArray("actions");
+            RoverController myRover  = new RoverController();
             for (int i = 0; i < actions.length(); i++) {
                 String action = (String) actions.get(i);
-                if (action.equals("left_for")){
-                    if( MainActivity.looper.getPwmDriveLeftVal() <= ( MainActivity.looper.getPWM_MAX_VAL() - MainActivity.looper.getPWM_CHANGE_VAL() ) )
-                    {
-                        MainActivity.looper.setpwmDriveLeftVal(MainActivity.looper.getPwmDriveLeftVal() + MainActivity.looper.getPWM_CHANGE_VAL());
-                    }
+                if (action.equals("forward")){
+                    myRover.forward();
                 }
-                if (action.equals("right_for")) {
-                    if (MainActivity.looper.getPwmDriveRightVal() >= (MainActivity.looper.getPWM_MIN_VAL() + MainActivity.looper.getPWM_CHANGE_VAL())) {
-                        MainActivity.looper.setPwmDriveRightVal(MainActivity.looper.getPwmDriveRightVal() - MainActivity.looper.getPWM_CHANGE_VAL());
-                    }
+                if (action.equals("reverse")) {
+                    myRover.reverse();
                 }
-                if (action.equals("left_rev")){
+                if (action.equals("turn_right")){
 
-                    if( MainActivity.looper.getpwmDriveLeftVal() >= ( MainActivity.looper.getPWM_MIN_VAL() + MainActivity.looper.getPWM_CHANGE_VAL() ) )
-                    {
-                        MainActivity.looper.setpwmDriveLeftVal(MainActivity.looper.getPwmDriveLeftVal() - MainActivity.looper.getPWM_CHANGE_VAL());
-                    }
-
+                    myRover.turnRight();
                 }
-                if (action.equals("right_rev")){
-                    if( MainActivity.looper.getpwmDriveRightVal() <= ( MainActivity.looper.getPWM_MAX_VAL() - MainActivity.looper.getPWM_MAX_VAL() ) )
-                        {
-                            MainActivity.looper.setPwmDriveRightVal(MainActivity.looper.getpwmDriveRightVal() + MainActivity.looper.getPWM_CHANGE_VAL());
-                        }
+                if (action.equals("turn_left")){
+                        myRover.turnLeft();
                     }
                 if (action.equals("led")) {
                     // on -> off and off -> on
-                    MainActivity.toggleButton_.setChecked(MainActivity.toggleButton_.isChecked());
+                    myRover.LED();
                 }
                 if (action.equals("fork_up")){
-                    if( MainActivity.looper.getPwmForkliftVal() <= ( MainActivity.looper.getPWM_MAX_VAL() - MainActivity.looper.getPWM_CHANGE_VAL() ) )
-                    {
-                        MainActivity.looper.setPwmForkliftVal(MainActivity.looper.getPwmForkliftVal() + MainActivity.looper.getPWM_CHANGE_VAL());
-                    }
+                    myRover.forkUp();
                 }
                 if (action.equals("fork_down"))
-                    if( MainActivity.looper.getPwmForkliftVal() >= ( MainActivity.looper.getPWM_MIN_VAL() + MainActivity.looper.getPWM_CHANGE_VAL() ) )
-                    {
-                        MainActivity.looper.setPwmForkliftVal(MainActivity.looper.getPwmForkliftVal() - MainActivity.looper.getPWM_CHANGE_VAL());
-                    }
+                    myRover.forkDown();
                 if (action.equals("mirror_left")){
-                    if( MainActivity.looper.getPwmCameraPanVal() <= ( MainActivity.looper.getPWM_MAX_VAL() - MainActivity.looper.getPWM_CHANGE_VAL()) );
-                    {
-                        MainActivity.looper.setPwmCameraPanVal(MainActivity.looper.getPwmCameraPanVal() + MainActivity.looper.getPwmCameraPanVal());
-                    }
+                    myRover.mirrorLeft();
                 }
                 if (action.equals("mirror_right")){
-                    if( MainActivity.looper.getPwmCameraPanVal() >= ( MainActivity.looper.getPWM_MIN_VAL() + MainActivity.looper.getPWM_MIN_VAL() ) )
-                    {
-                        MainActivity.looper.setPwmCameraPanVal(MainActivity.looper.getPwmCameraPanVal() - MainActivity.looper.getPWM_CHANGE_VAL());
-                    }
+                    myRover.mirrorRight();
                 }
 
 
