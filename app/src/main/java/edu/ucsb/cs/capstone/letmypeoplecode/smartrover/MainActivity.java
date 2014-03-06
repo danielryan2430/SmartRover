@@ -25,12 +25,20 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.os.Build;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
+import java.io.BufferedInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
 import org.json.JSONException;
 
 import java.nio.ByteBuffer;
@@ -63,92 +71,7 @@ public class MainActivity extends IOIOActivity {
 
     private BluetoothAdapter mBluetoothAdapter;
     private SharedPreferences sharedPref;
-    private BeaconManager BTManager;
-    private final BroadcastReceiver ActionFoundReceiver = new BroadcastReceiver(){
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if(BluetoothDevice.ACTION_FOUND.equals(action)) {
-                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                 Beacon device2= new Beacon(0,0,0,0);
-//                out.append("\n  Device: " + device.getName() + ", " + device);
-                try{
-                    BTManager.addBeacon("corner1",device2);
-                   }
-                catch(BeaconError e)
-                {}
-            } else {
-                if(BluetoothDevice.ACTION_UUID.equals(action)) {
-                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                    ParcelUuid thing[] = device.getUuids();
-                    Parcelable[] uuidExtra = intent.getParcelableArrayExtra(BluetoothDevice.EXTRA_UUID);
-                    for (int i=0;uuidExtra!=null && i<uuidExtra.length; i++) {
-                        Log.d("bt_scan_results", "Device: " + device.getName() + ", " + device + ", Service: " + uuidExtra[i].toString());
-                    }
-                }
-            }
-        }
-    };
-    private BluetoothAdapter.LeScanCallback mLeScanCallback =
-            new BluetoothAdapter.LeScanCallback() {
-                @Override
-
-                public void onLeScan(final BluetoothDevice device, final int rssi,
-                                     byte[] scanRecord) {
-                    String ass = device.getName();
-                    String addr = device.getAddress();
-                    ByteBuffer M = ByteBuffer.allocate(2);
-                    M.order(ByteOrder.BIG_ENDIAN);
-                    M.put(scanRecord[25]);
-                    M.put(scanRecord[26]);
-                    final short major=M.getShort(0);
-
-                    ByteBuffer m = ByteBuffer.allocate(2);
-                    m.order(ByteOrder.BIG_ENDIAN);
-                    m.put(scanRecord[27]);
-                    m.put(scanRecord[28]);
-                    final short minor=m.getShort(0);
-                    final double distance=(Math.exp(((rssi+(9.10396133590131))/-12.864335093782)));
-
-                    String uniqueID=("M: "+Short.toString(major)+", m: "+Short.toString(minor));
-
-                    /*if((uniqueID).equals("M: 7182, m: 12144"))
-                        {
-                        Log.d("success","detected corner beacon");
-                        try{
-                            Beacon corner1=new Beacon(0,0,0);
-                            BTManager.addBeacon("corner1",corner1);
-                            }
-                            catch(BeaconError e){}
-                        }*/
-                    //Log.d("bt_scan_results",device.getUuids());
-
-                    /*Beacon corner1=new Beacon(0,0,0);
-                    try{
-                        BTManager.addBeacon(device.getName(),corner1);
-                        }
-                    catch(BeaconError e)
-                        {
-                        }*/
-                    //BTManager.updateDistance(device.getName(), distance);
-
-                    long waitPeriod=2000;
-                    waitPeriod = (long)(Math.exp(-0.1151292546 * rssi - 4.029523913)*1.2 + 100);
-                    Log.d("bt_scan_results", device.toString() + " " + Integer.toString(rssi) + " " + waitPeriod);
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            ((TextView) findViewById(R.id.Infolog)).setText("Distance: "+Double.toString(distance)+"M: "+Short.toString(major)+", m: "+Short.toString(minor));
-                        }
-                    });
-                }
-            };
-
-
-
-
-
+    private BeaconManager bManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -208,17 +131,7 @@ public class MainActivity extends IOIOActivity {
         }
 
        this.sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-
-        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_UUID);
-
-        registerReceiver(ActionFoundReceiver, filter);
-
-        this.scanRepeatedly();
     }
-
-
-
-
 
     public SharedPreferences getSharedPref() {
         return sharedPref;
@@ -227,28 +140,6 @@ public class MainActivity extends IOIOActivity {
     public void setSharedPref(SharedPreferences sharedPref) {
         this.sharedPref = sharedPref;
     }
-
-
-
-
-    public void scanRepeatedly(){
-        final Thread scanThread = new Thread(new Runnable(){
-            public void run(){
-                Log.d("bt_scan_results","im in a thread");
-                while(true){
-                    mBluetoothAdapter.startLeScan(mLeScanCallback);
-                    try{
-                        Thread.sleep(500);
-                    }catch(InterruptedException e){
-                        //NOTHING IS WRONG HO HO HO
-                    }
-                    mBluetoothAdapter.stopLeScan(mLeScanCallback);
-                }
-            }
-        });
-        scanThread.start();
-    }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -283,287 +174,6 @@ public class MainActivity extends IOIOActivity {
                                  Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.fragment_main, container, false);
             return rootView;
-        }
-    }
-
-    // Start IOIO
-    class Looper extends BaseIOIOLooper {
-        private AnalogInput input_;
-        private DigitalOutput led_;
-
-        private PwmOutput pwmForklift;
-        private PwmOutput pwmDriveRight;
-        private PwmOutput pwmDriveLeft;
-        private PwmOutput pwmCameraPan;
-        private final int PWM_CENTER_VAL = 1500; // motor servo "off"
-        private final int PWM_MIN_VAL = 1300;
-        private final int PWM_MAX_VAL = 1735;
-        private final int PWM_CHANGE_VAL = 25;
-        private int		  pwmDriveRightVal = PWM_CENTER_VAL;
-        private int		  pwmDriveLeftVal = PWM_CENTER_VAL;
-        private int		  pwmForkliftVal = PWM_CENTER_VAL;
-        private int		  pwmCameraPanVal = PWM_CENTER_VAL;
-
-        private final String	TAG = "IOIOSimpleAppLooper";
-
-        @Override
-        public void setup() throws ConnectionLostException {
-            led_ = ioio_.openDigitalOutput(IOIO.LED_PIN, true);
-            input_ = ioio_.openAnalogInput(40);
-
-            try
-            {
-                pwmForklift = ioio_.openPwmOutput(4, 50);
-                pwmDriveRight = ioio_.openPwmOutput(3, 50);
-                pwmDriveLeft = ioio_.openPwmOutput(2, 50);
-                pwmCameraPan = ioio_.openPwmOutput(1, 50);
-            }
-            catch (ConnectionLostException e)
-            {
-                Log.e(TAG, "Connection to the controller is unavailable, configuration is aborted.");
-                e.printStackTrace();
-            }
-
-            // Begin MDR Specific Buttons
-            btnDriveRightFwd.setOnClickListener(new View.OnClickListener()
-            {
-                @Override
-                public void onClick(View v) {
-                    // Subtract to move forward as servo is mounted opposite
-                    // to positive direction
-                    if( pwmDriveRightVal >= ( PWM_MIN_VAL + PWM_CHANGE_VAL ) )
-                    {
-                        pwmDriveRightVal -= PWM_CHANGE_VAL;
-                        Log.v( TAG, "New right pwm val: " + pwmDriveRightVal );
-                    }
-                }
-            });
-
-            btnDriveLeftFwd.setOnClickListener(new View.OnClickListener()
-            {
-                @Override
-                public void onClick(View v) {
-                    // Add to move forward as servo is mounted in positive
-                    // direction
-                    if( pwmDriveLeftVal <= ( PWM_MAX_VAL - PWM_CHANGE_VAL ) )
-                    {
-                        pwmDriveLeftVal += PWM_CHANGE_VAL;
-                        Log.v( TAG, "New left pwm val: " + pwmDriveLeftVal );
-                    }
-                }
-            });
-
-            btnDriveRightRev.setOnClickListener(new View.OnClickListener()
-            {
-                @Override
-                public void onClick(View v) {
-                    // Subtract to reverse as servo is mounted opposite
-                    // to positive direction
-                    if( pwmDriveRightVal <= ( PWM_MAX_VAL - PWM_CHANGE_VAL ) )
-                    {
-                        pwmDriveRightVal += PWM_CHANGE_VAL;
-                        Log.v( TAG, "New right pwm val: " + pwmDriveRightVal );
-                    }
-
-                }
-            });
-
-            btnDriveLeftRev.setOnClickListener(new View.OnClickListener()
-            {
-                @Override
-                public void onClick(View v) {
-                    // Add to reverse as servo is mounted in positive
-                    // direction
-                    if( pwmDriveLeftVal >= ( PWM_MIN_VAL + PWM_CHANGE_VAL ) )
-                    {
-                        pwmDriveLeftVal -= PWM_CHANGE_VAL;
-                        Log.v( TAG, "New left pwm val: " + pwmDriveLeftVal );
-                    }
-                }
-            });
-
-            btnForkliftUp.setOnClickListener(new View.OnClickListener()
-            {
-                @Override
-                public void onClick(View v) {
-                    if( pwmForkliftVal <= ( PWM_MAX_VAL - PWM_CHANGE_VAL ) )
-                    {
-                        pwmForkliftVal += PWM_CHANGE_VAL;
-                        Log.v( TAG, "New forklift pwm val: " + pwmForkliftVal );
-                    }
-                }
-            });
-
-            btnForkliftDown.setOnClickListener(new View.OnClickListener()
-            {
-                @Override
-                public void onClick(View v) {
-                    if( pwmForkliftVal >= ( PWM_MIN_VAL + PWM_CHANGE_VAL ) )
-                    {
-                        pwmForkliftVal -= PWM_CHANGE_VAL;
-                        Log.v( TAG, "New forklift pwm val: " + pwmForkliftVal );
-                    }
-                }
-            });
-
-            btnCameraPanLeft.setOnClickListener(new View.OnClickListener()
-            {
-                @Override
-                public void onClick(View v) {
-                    if( pwmCameraPanVal <= ( PWM_MAX_VAL - PWM_CHANGE_VAL ) )
-                    {
-                        pwmCameraPanVal += PWM_CHANGE_VAL;
-                        Log.v( TAG, "New camera pan pwm val: " + pwmCameraPanVal );
-                    }
-                }
-            });
-
-            btnCameraPanRight.setOnClickListener(new View.OnClickListener()
-            {
-                @Override
-                public void onClick(View v) {
-                    if( pwmCameraPanVal >= ( PWM_MIN_VAL + PWM_CHANGE_VAL ) )
-                    {
-                        pwmCameraPanVal -= PWM_CHANGE_VAL;
-                        Log.v( TAG, "New camera pan pwm val: " + pwmCameraPanVal );
-                    }
-                }
-            });
-
-            // End MDR Specific Buttons
-
-            enableUi(true);
-        }
-
-        @Override
-        public void loop() throws ConnectionLostException, InterruptedException {
-            setNumber(input_.read());
-            led_.write(!toggleButton_.isChecked());
-
-            pwmDriveRight.setPulseWidth( pwmDriveRightVal );
-            pwmDriveLeft.setPulseWidth( pwmDriveLeftVal );
-            pwmForklift.setPulseWidth( pwmForkliftVal );
-            pwmCameraPan.setPulseWidth( pwmCameraPanVal );
-
-            Thread.sleep(10);
-        }
-
-        @Override
-        public void disconnected() {
-            enableUi(false);
-        }
-
-        public AnalogInput getInput_() {
-            return input_;
-        }
-
-        public void setInput_(AnalogInput input_) {
-            this.input_ = input_;
-        }
-
-        public DigitalOutput getLed_() {
-            return led_;
-        }
-
-        public void setLed_(DigitalOutput led_) {
-            this.led_ = led_;
-        }
-
-        public PwmOutput getPwmForklift() {
-            return pwmForklift;
-        }
-
-        public void setPwmForklift(PwmOutput pwmForklift) {
-            this.pwmForklift = pwmForklift;
-        }
-
-        public PwmOutput getPwmDriveRight() {
-            return pwmDriveRight;
-        }
-
-        public void setPwmDriveRight(PwmOutput pwmDriveRight) {
-            this.pwmDriveRight = pwmDriveRight;
-        }
-
-        public PwmOutput getPwmDriveLeft() {
-            return pwmDriveLeft;
-        }
-
-        public void setPwmDriveLeft(PwmOutput pwmDriveLeft) {
-            this.pwmDriveLeft = pwmDriveLeft;
-        }
-
-        public PwmOutput getPwmCameraPan() {
-            return pwmCameraPan;
-        }
-
-        public void setPwmCameraPan(PwmOutput pwmCameraPan) {
-            this.pwmCameraPan = pwmCameraPan;
-        }
-
-        public int getPWM_CENTER_VAL() {
-            return PWM_CENTER_VAL;
-        }
-
-        public int getPWM_MIN_VAL() {
-            return PWM_MIN_VAL;
-        }
-
-        public int getPWM_MAX_VAL() {
-            return PWM_MAX_VAL;
-        }
-
-        public int getPWM_CHANGE_VAL() {
-            return PWM_CHANGE_VAL;
-        }
-
-        public int getPwmDriveRightVal() {
-            return pwmDriveRightVal;
-        }
-
-        public void setPwmDriveRightVal(int pwmDriveRightVal) {
-            this.pwmDriveRightVal = pwmDriveRightVal;
-        }
-
-        public int getPwmDriveLeftVal() {
-            return pwmDriveLeftVal;
-        }
-
-        public void setPwmDriveLeftVal(int pwmDriveLeftVal) {
-            this.pwmDriveLeftVal = pwmDriveLeftVal;
-        }
-
-        public int getPwmForkliftVal() {
-            return pwmForkliftVal;
-        }
-
-        public void setPwmForkliftVal(int pwmForkliftVal) {
-            this.pwmForkliftVal = pwmForkliftVal;
-        }
-
-        public int getPwmCameraPanVal() {
-            return pwmCameraPanVal;
-        }
-
-        public void setPwmCameraPanVal(int pwmCameraPanVal) {
-            this.pwmCameraPanVal = pwmCameraPanVal;
-        }
-
-        public String getTAG() {
-            return TAG;
-        }
-
-
-        public void setpwmDriveLeftVal(int pwmDriveLeftVal) {
-            this.pwmDriveLeftVal = pwmDriveLeftVal;
-        }
-
-        public int getpwmDriveRightVal() {
-            return pwmDriveRightVal;
-        }
-
-        public int getpwmDriveLeftVal() {
-            return pwmDriveLeftVal;
         }
     }
 
@@ -602,5 +212,5 @@ public class MainActivity extends IOIOActivity {
         });
     }
     // End IOIO
-
 }
+
