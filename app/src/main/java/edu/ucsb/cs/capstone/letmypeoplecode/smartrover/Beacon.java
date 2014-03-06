@@ -4,6 +4,8 @@ package edu.ucsb.cs.capstone.letmypeoplecode.smartrover;
 import android.animation.IntEvaluator;
 
 import java.util.ArrayList;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -16,17 +18,21 @@ import java.util.concurrent.Semaphore;
  */
 
 public class Beacon {
+	private String id; 		//The unique ID to refer to this beacon
+	private Boolean staleValue = true; 	//Is this RSSI value fresh?
     private Boolean test = false;       //Init with fake values?
     private double distance;    //Hard coded distance for testing
     private Point3D myLocation;
-    private double pathLoss_d0 = 42;     //path loss at a distance of 1 foot. Will depend on the beacon power and the phone
-    private int myRSSI;
-    private static int avgSize = 12;
-    private static Boolean enableMovingAvg = true;
-    private Semaphore changeRSSIlock;
-    //^^THIS IS PATH LOSS, NOT RSSI (so just negate RSSI for all practical purposes)
+    private double pathLoss_d0 = 42;     //path loss at a distance of d0 foot. Will depend on the beacon power and the phone
+	private double d0 = 3.0; 			//The aforementioned distance
+	//^^THIS IS PATH LOSS, NOT RSSI (so just negate RSSI for all practical purposes)
 
-    private ArrayList<Integer> movingAvg;
+    private int myRSSI;
+
+    private static int avgSize = 50;
+    private static Boolean enableMovingAvg = true;
+	private ConcurrentLinkedQueue<Integer> movingAvg;
+	private Integer sumSoFar = 0;
 
     public Beacon(Point3D beaconLocation) {
         myLocation = beaconLocation;
@@ -38,11 +44,17 @@ public class Beacon {
         otherConstruct();
     }
 
-    //For testing purposes only
-    public Beacon(double x, double y, double z, double hardCodeDist) {
+    public Beacon(double x,double y,double z,double lossD0){
         myLocation = new Point3D(x, y, z);
-        setDistance_test(hardCodeDist);
+		pathLoss_d0 = lossD0;
+        otherConstruct();
     }
+
+    //For testing purposes only
+//    public Beacon(double x, double y, double z, double hardCodeDist) {
+//        myLocation = new Point3D(x, y, z);
+//        setDistance_test(hardCodeDist);
+//    }
 
     //FOR TESTING ONLY
     public void setDistance_test(double d) {
@@ -53,15 +65,22 @@ public class Beacon {
     public void setRSSI(int rssi){
 //        myRSSI=rssi;
         if(enableMovingAvg){
-            try{changeRSSIlock.acquire();}catch(InterruptedException e){}
-            movingAvg.remove(0);
-            movingAvg.add(rssi);
-            changeRSSIlock.release();
+			sumSoFar -= movingAvg.remove();
+			sumSoFar += rssi;
+			movingAvg.add(rssi);
         }else{
             myRSSI = rssi;
         }
+		staleValue=false;
     }
 
+	public void setID(String nID){
+		this.id = nID;
+	}
+
+	public Boolean isStale(){
+		return staleValue;
+	}
 
     public double computeDistance(double pathLossExp){
         //Get the RSSI for this beacon and compute the approximate distance
@@ -69,7 +88,8 @@ public class Beacon {
         if (test)
             return distance;
 
-        return Math.exp(0.2302585093 * (-getRSSI() - pathLoss_d0) / pathLossExp );
+		staleValue = true;
+        return d0 * Math.exp(0.2302585093 * (-getRSSI() - pathLoss_d0) / pathLossExp );
     }
 
     public Point3D getLocation() {
@@ -77,24 +97,32 @@ public class Beacon {
     }
 
     public double getRSSI(){
-        if(enableMovingAvg){
-            try{changeRSSIlock.acquire();}catch(InterruptedException e){}
-            double avg=0;
-            for(double v : movingAvg)
-                avg += v;
-            avg /= avgSize;
-            changeRSSIlock.release();
-            return avg;
-        }else{
-            return myRSSI;
-        }
+		if(!enableMovingAvg)
+			return myRSSI;
+		return (double)sumSoFar / avgSize;
     }
 
+
+	public String toString(){
+		double avg_rssi = getRSSI();
+		return String.format("%-12s %2.3f %2.2f",id,avg_rssi,stdDeviation(avg_rssi));
+	}
+
     private void otherConstruct(){
-        movingAvg = new ArrayList<Integer>();
+        movingAvg = new ConcurrentLinkedQueue<Integer>();
         for(int i=0;i<avgSize;i++){
             movingAvg.add(0);
         }
-        changeRSSIlock = new Semaphore(1);
     }
+
+	private double stdDeviation(double mean){
+		double var=0;
+		double d;
+		for(double v : movingAvg){
+			d = (v-mean);
+			var += d*d;
+		}
+		return Math.sqrt(var/avgSize);
+	}
 }
+

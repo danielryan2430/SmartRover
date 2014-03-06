@@ -4,4 +4,41 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="edu.ucsb.cs.capstone.letmypeoplecode.smartrover.MainActivity"
-    tools:ignore="MergeRootFrame" />
+    tools:ignore="MergeRootFrame" >
+
+    <HorizontalScrollView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/horizontalScrollView"
+        android:layout_gravity="right|bottom" />
+
+    <ListView
+        android:layout_width="wrap_content"
+        android:layout_height="452dp"
+        android:id="@+id/beaconListView"
+        android:layout_gravity="center_horizontal|bottom" />
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="fill_parent"
+        android:layout_height="68dp"
+        android:layout_gravity="center_horizontal|top">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Trilat results"
+            android:id="@+id/trilatResultView"
+            android:layout_gravity="center_horizontal|top"
+            android:textSize="17sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Scan speed"
+            android:id="@+id/scanSpeedView"
+            android:textSize="17sp"/>
+    </LinearLayout>
+
+</FrameLayout>
+

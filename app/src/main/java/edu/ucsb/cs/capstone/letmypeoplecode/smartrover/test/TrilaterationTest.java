@@ -72,7 +72,9 @@ public class TrilaterationTest extends InstrumentationTestCase {
         BeaconManager mngr = new BeaconManager();
         for (int i = 0; i < l; i++) {
             //Normally the 4th parameter of new Beacon() is omitted, but this is for testing
-            mngr.addBeacon(Integer.toString(i), new Beacon(xs[i], ys[i], zs[i], dists[i]));
+            Beacon add = new Beacon(xs[i], ys[i], zs[i]);
+            add.setDistance_test(dists[i]);
+            mngr.addBeacon(Integer.toString(i),add);
         }
         return mngr.doTrilateration();
     }

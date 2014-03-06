@@ -16,14 +16,16 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import java.io.BufferedInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
-
-//TODO : STOP DUMPING STUFF IN MAIN!
 
 public class MainActivity extends ActionBarActivity {
     private BluetoothAdapter mBluetoothAdapter;
@@ -39,6 +41,8 @@ public class MainActivity extends ActionBarActivity {
             getSupportFragmentManager().beginTransaction()
                     .add(R.id.container, new PlaceholderFragment())
                     .commit();
+        }else{
+            return;
         }
 
 
@@ -57,32 +61,40 @@ public class MainActivity extends ActionBarActivity {
         }
 
         this.sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+
         if(bManager != null)
             return;
         bManager = new BeaconManager();
         bManager.setBTadapter(mBluetoothAdapter);
+		bManager.loadState(this);
+        double gimbalD0 = 60.8;
+		double ibeaconD0 = 65.8;
+
         try{
-//            bManager.addBeacon("M: 5719, m: 14674", new Beacon(4.25, 0, 0));
-//            bManager.addBeacon("M: 9177, m: 7843", new Beacon(0, 0, 0));
-//            bManager.addBeacon("M: 10374, m: 17963", new Beacon(1.70833333333, 0, 0));
-//            bManager.addBeacon("M: 5054, m: 14674", new Beacon(3, 0, 0));
+            bManager.addBeacon("FYTM-BTYFT", 	new Beacon(0,		0,		7.92,	gimbalD0));		//-61.0
+			bManager.addBeacon("1NNH-VT376", 	new Beacon(0,		3.9167,	7.92,	gimbalD0));		//-60.8
+			bManager.addBeacon("M: 17, m: 18",	new Beacon(4.0,		-1.875,	5.7325,	ibeaconD0)); 	//-67.3
+			bManager.addBeacon("M: 33, m: 34",	new Beacon(4.0,		0,		7.92,	ibeaconD0));		//-66.3
+			bManager.addBeacon("M: 49, m: 50",	new Beacon(4.0,		3.9167,	7.92,	ibeaconD0));		//-65.8
+			bManager.addBeacon("ZT9M-3AJNE",	new Beacon(8.229,	0,		7.92,	gimbalD0));		//
+			bManager.addBeacon("NE6T-Y7K5T", 	new Beacon(8.229,	3.833,	7.92,	gimbalD0)); 	//-62.6
             bManager.startBTupdating();
         }catch(BeaconError e){
             Log.e("bt","Bluetooth scanning fucked up",e);
         }
-//        bManager.logEnable();
+
+		ListView bList = (ListView) findViewById(R.id.beaconListView);
+		ArrayAdapter<Beacon> adapter = new ArrayAdapter<Beacon>(this,R.layout.list_item,bManager.beaconList);
+		bList.setAdapter(adapter);
+		bManager.listViewEnable(adapter,this);
+        bManager.logEnable();
     }
 
-
-    public SharedPreferences getSharedPref() {
-        return sharedPref;
-    }
-
-    public void setSharedPref(SharedPreferences sharedPref) {
-        this.sharedPref = sharedPref;
-    }
-
-
+	public void onPause(){
+		if(bManager!=null)
+			bManager.saveState(this);
+		super.onPause();
+	}
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
 
